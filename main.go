@@ -28,27 +28,22 @@ func run(w io.Writer, errw io.Writer) error {
 	defer watcher.Close()
 
 	go func() {
-		var lastEventTime time.Time
+		debouncer := NewEventDebouncer(100*time.Millisecond, func() {
+			fmt.Fprintln(w, "Syncing from src to dest")
+			if err := syncDirectories(src, dest, rsyncOverrideFlags); err != nil {
+				fmt.Fprintln(errw, err)
+			}
+		})
+		debouncer.Trigger()
+
 		for {
 			select {
-			case event, ok := <-watcher.Events:
+			case _, ok := <-watcher.Events:
 				if !ok {
 					return
 				}
 
-				// Multiple events are triggered for a single file write operation.
-				// To avoid abusively calling rsync, we'll debounce events, i.e. wait
-				// a short period to allow all events related to a single file write to occur,
-				// and process them as a group.
-				if event.Op&fsnotify.Write == fsnotify.Write {
-					now := time.Now()
-					if now.Sub(lastEventTime) > 100*time.Millisecond {
-						fmt.Fprintln(w, "File system change detected:", event)
-						syncDirectories(src, dest, rsyncOverrideFlags)
-					}
-					lastEventTime = now
-				}
-
+				debouncer.Trigger()
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					return
@@ -63,7 +58,7 @@ func run(w io.Writer, errw io.Writer) error {
 		return err
 	}
 
-	// block the main goroutine, waiting for file system events
+	// block the main goroutine, waiting for file system events.
 	select {}
 }
 

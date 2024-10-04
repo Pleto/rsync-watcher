@@ -2,12 +2,11 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os/exec"
 	"strings"
 )
 
-func syncDirectories(src, dest, rsyncOverrideFlags string) {
+func syncDirectories(src, dest, rsyncOverrideFlags string) error {
 	var cmd *exec.Cmd
 
 	if rsyncOverrideFlags != "" {
@@ -18,9 +17,9 @@ func syncDirectories(src, dest, rsyncOverrideFlags string) {
 		cmd = exec.Command("rsync", "-avz", "--delete", src, dest)
 	}
 
-	output, err := cmd.CombinedOutput()
+	_, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Printf("Rsync error: %s\n", err)
+		return fmt.Errorf("rsync error: %w", err)
 	}
-	fmt.Printf("Rsync output: %s\n", output)
+	return nil
 }
