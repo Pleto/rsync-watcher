@@ -1,6 +1,7 @@
 package main
 
 import (
+    "os"
 	"flag"
 	"fmt"
 	"strings"
@@ -37,13 +38,13 @@ func (c *Config) flags() error {
 		return fmt.Errorf("missing required flag: -dest")
 	}
 
-	c.gatherRsyncFlagsIfExist()
+	c.RSyncOverrideFlags = c.gatherRsyncFlagsIfExist()
 
 	return nil
 }
 
-func (c *Config) gatherRsyncFlagsIfExist() {
-	args := flag.Args()
+func (c *Config) gatherRsyncFlagsIfExist() string {
+    args := os.Args[1:]
 	sepIndex := -1
 	for i, arg := range args {
 		if arg == "--" {
@@ -57,7 +58,7 @@ func (c *Config) gatherRsyncFlagsIfExist() {
 		rsyncArgs = args[sepIndex+1:]
 	}
 
-	c.RSyncOverrideFlags = strings.Join(rsyncArgs, " ")
+	return strings.Join(rsyncArgs, " ")
 }
 
 type Path string

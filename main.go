@@ -15,7 +15,9 @@ func run(w io.Writer, errw io.Writer) error {
 		return fmt.Errorf("failed to initialise config: %w", err)
 	}
 
-	addSSHKeys(w, cfg.SSHAdd)
+    if err := addSSHKeys(w, cfg.SSHAdd); err != nil {
+        return fmt.Errorf("addSSHKeys(): %w", err)
+    }
 
 	src := string(cfg.Source)
 	dest := string(cfg.Destination)
